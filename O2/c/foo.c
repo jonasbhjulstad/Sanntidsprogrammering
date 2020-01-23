@@ -1,49 +1,52 @@
-#include <windows.h>
+#include <pthread.h>
 #include <stdio.h>
 
 int i = 0;
-int incFlag = 0;
-int decFlag = 0;
 
+pthread_mutex_t mutex;
 
-DWORD WINAPI incrementingThreadFunction(){
+// Note the return type: void*
+void* incrementingThreadFunction(){
+    // TODO: increment i 1_000_000 times
     int k;
     for (k = 0; k < 1000000; k++)
     {
+        while(pthread_mutex_trylock(&mutex)!= 0)
+        {
+        }
         i++;
+        pthread_mutex_unlock(&mutex);
     }
-    incFlag = 1;
-    return 0;
+
+
+    return NULL;
 }
 
-DWORD WINAPI decrementingThreadFunction(){
+void* decrementingThreadFunction(){
     int k;
     for (k = 0; k < 1000000; k++)
     {
+        while(pthread_mutex_trylock(&mutex) != 0)
+        {}
         i--;
+        pthread_mutex_unlock(&mutex);
     }
-    printf("dec done\n");
-
-    decFlag = 1;
-    return 0;
+    return NULL;
 }
 
 
 int main(){
-    
-    printf("test");
 
-    DWORD decID;
-    DWORD incID;
-    HANDLE incHandle = CreateThread(0,0,incrementingThreadFunction, NULL, 0, &incID);
-    HANDLE decHandle = CreateThread(0,0,decrementingThreadFunction, NULL, 0, &decID);
-    
-    Sleep(1000);
+    pthread_t incrementingThread;
+    pthread_t decrementingThread;
+    // TODO: declare incrementingThread and decrementingThread (hint: google pthread_create)
+
+    pthread_create(&incrementingThread, NULL, incrementingThreadFunction, NULL);
+    pthread_create(&decrementingThread, NULL, decrementingThreadFunction, NULL);
+
+    pthread_join(incrementingThread, NULL);
+    pthread_join(decrementingThread, NULL);
 
     printf("The magic number is: %d\n", i);
-
-    CloseHandle(incHandle);
-    CloseHandle(decHandle);
-
     return 0;
 }
